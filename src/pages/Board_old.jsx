@@ -1,3 +1,9 @@
+//DEJE ESTE ANTES DE PUSHEAR
+//BORRAR SI NO HAY ERRORES
+
+
+
+
 import React, { useEffect, useState } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import api from '../services/api'
