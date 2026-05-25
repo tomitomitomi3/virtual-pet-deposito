@@ -12,7 +12,7 @@
    export const useOrderBoard = () => {
      const [orders, setOrders] = useState([]);
      const [loading, setLoading] = useState(true);
-  
+     const ws = useRef(null);
 
      const fetchOrders = useCallback(async () => {
        try {
@@ -25,7 +25,65 @@
        }
      }, []);
 
-     useEffect(() => { fetchOrders(); }, [fetchOrders]);
+     useEffect(() => {
+       fetchOrders();
+
+       let socket;
+       let reconnectTimer;
+
+       const connectWS = () => {
+         const wsUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace('http', 'ws') + '/backoffice/ws';
+         console.log('Connecting to WS:', wsUrl);
+         
+         socket = new WebSocket(wsUrl);
+
+         socket.onmessage = (event) => {
+           try {
+             const data = JSON.parse(event.data);
+             if (data.type === 'order_updated') {
+               console.log('WS Update received:', data.order);
+               setOrders(prev => {
+                 const index = prev.findIndex(o => o.id === data.order.id);
+                 if (index !== -1) {
+                   const newOrders = [...prev];
+                   newOrders[index] = data.order;
+                   return newOrders;
+                 }
+                 return [data.order, ...prev];
+               });
+             }
+           } catch (err) {
+             console.error('Error parsing WS message:', err);
+           }
+         };
+
+         socket.onopen = () => {
+           console.log('WS Connected ✅');
+         };
+
+         socket.onclose = () => {
+           console.log('WS Disconnected ❌. Reconnecting in 3s...');
+           reconnectTimer = setTimeout(connectWS, 3000);
+         };
+
+         socket.onerror = (err) => {
+           console.error('WS Error ⚠️:', err);
+           socket.close();
+         };
+         
+         ws.current = socket;
+       };
+
+       connectWS();
+
+       return () => {
+         if (reconnectTimer) clearTimeout(reconnectTimer);
+         if (socket) {
+           socket.onclose = null; // Evitar reconexión al desmontar
+           socket.close();
+         }
+       };
+     }, [fetchOrders]);
 
      const handleMove = async (result) => {
        const { destination, source, draggableId } = result;

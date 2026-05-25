@@ -238,18 +238,4 @@ const Board = () => {
   );
 };
 
-export default Board;>
-                      <span className="font-bold text-gray-900">${order.total.toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default Board;
