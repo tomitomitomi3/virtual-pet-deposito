@@ -6,9 +6,10 @@ import { useOrderBoard } from '../hooks/useOrderBoard';
 import { useCourierSimulation } from '../hooks/useCourierSimulation'; 
 import OrderCard from '../components/OrderCard';
 import useAuthStore from '../store/authStore';
+import { Link } from 'react-router-dom';
 import { 
   LogOut, Package, Truck, Clock, Dog, Hammer, 
-  History, CheckCircle, User, MapPin 
+  History, CheckCircle, User, MapPin, Users 
 } from 'lucide-react';
 
 const COLUMNS = {
@@ -48,6 +49,11 @@ const Board = () => {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {user?.role === 'admin' && (
+            <Link to="/usuarios" className="flex items-center gap-2 px-4 py-2 bg-surface-50 border border-surface-200 rounded-xl hover:bg-surface-100 transition-colors text-sm font-bold text-gray-600 shadow-sm">
+              <Users className="w-4 h-4 text-brand-500" /> Usuarios
+            </Link>
+          )}
           <button onClick={() => setShowHistory(true)} className="flex items-center gap-2 px-4 py-2 bg-white border border-surface-200 rounded-xl hover:bg-surface-50 transition-colors text-sm font-bold text-gray-600 shadow-sm">
             <History className="w-4 h-4" /> Historial
           </button>
@@ -219,6 +225,20 @@ const Board = () => {
                     <p className="text-xs text-gray-500 mt-1">{order.direccion_entrega}</p>
                     <div className="mt-3 pt-3 border-t border-surface-100 flex justify-between items-center text-xs">
                       <span className="text-gray-400">{new Date(order.created_at).toLocaleDateString()}</span>
+                      <span className="font-bold text-gray-900">${order.total.toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Board;>
                       <span className="font-bold text-gray-900">${order.total.toLocaleString()}</span>
                     </div>
                   </div>
