@@ -13,7 +13,7 @@ import { LogOut, Package, Truck, Clock, Dog, MapPin, User, ChevronRight } from '
 const COLUMNS = {
   pendiente: { id: 'pendiente', title: 'Pendiente', icon: Clock, color: 'bg-amber-100 text-amber-700 border-amber-200' },
   preparado: { id: 'preparado', title: 'Preparado', icon: Package, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  enviado: { id: 'enviado', title: 'Enviado', icon: Truck, color: 'bg-green-100 text-green-700 border-green-200' },
+  despachado: { id: 'despachado', title: 'Despachado', icon: Truck, color: 'bg-green-100 text-green-700 border-green-200' },
 }
 
 const Board = () => {

@@ -11,6 +11,17 @@ vi.mock('../services/api', () => ({
   },
 }));
 
+// Mock de WebSocket para evitar errores en tests
+class MockWebSocket {
+  constructor(url) {
+    this.url = url;
+    setTimeout(() => this.onopen?.(), 0);
+  }
+  send() {}
+  close() {}
+}
+global.WebSocket = MockWebSocket;
+
 const mockOrders = [
   { id: 1, estado: 'pendiente', user: { nombre: 'A', apellido: 'B' }, total: 100, created_at: new Date().toISOString() },
   { id: 2, estado: 'en_preparacion', user: { nombre: 'C', apellido: 'D' }, total: 200, created_at: new Date().toISOString() },
@@ -93,5 +104,27 @@ describe('useOrderBoard', () => {
 
     expect(api.patch).toHaveBeenCalledWith('/backoffice/orders/1/estado', { estado: 'en_preparacion' });
     expect(result.current.orders.find(o => o.id === 1).estado).toBe('en_preparacion');
+
+    // Intentar mover de 'despachado' a 'en_transito' (válido)
+    const ordersWithSent = [
+        { id: 3, estado: 'despachado', user: { nombre: 'E', apellido: 'F' }, total: 300, created_at: new Date().toISOString() }
+    ];
+    api.get.mockResolvedValue({ data: ordersWithSent });
+    
+    const { result: result2 } = renderHook(() => useOrderBoard());
+    await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+
+    const transitResult = {
+      destination: { droppableId: 'en_transito', index: 0 },
+      source: { droppableId: 'despachado', index: 0 },
+      draggableId: '3'
+    };
+
+    await act(async () => {
+      await result2.current.handleMove(transitResult);
+    });
+
+    expect(api.patch).toHaveBeenCalledWith('/backoffice/orders/3/estado', { estado: 'en_transito' });
+    expect(result2.current.orders.find(o => o.id === 3).estado).toBe('en_transito');
   });
 });

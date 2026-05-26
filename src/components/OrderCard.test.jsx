@@ -44,8 +44,8 @@ describe('OrderCard', () => {
     expect(screen.getByText(/REENVÍO POR FALLA/i)).toBeInTheDocument();
   });
 
-  it('debe mostrar el estado del transportista si está enviado', () => {
-    const sentOrder = { ...mockOrder, estado: 'enviado' };
+  it('debe mostrar el estado del transportista si está despachado', () => {
+    const sentOrder = { ...mockOrder, estado: 'despachado' };
     const sentTimestamp = Date.now() - 5000; // 5 segundos atrás
     renderWithDnD(
       <OrderCard 
@@ -58,6 +58,32 @@ describe('OrderCard', () => {
     );
     
     expect(screen.getByText(/EN MANOS DEL TRANSPORTISTA/i)).toBeInTheDocument();
+  });
+
+  it('debe mostrar el estado "En tránsito" si la orden está en ese estado', () => {
+    const transitOrder = { ...mockOrder, estado: 'en_transito' };
+    renderWithDnD(
+      <OrderCard 
+        order={transitOrder} 
+        index={0} 
+        onClick={() => {}} 
+      />
+    );
+    
+    expect(screen.getByText(/EN TRÁNSITO/i)).toBeInTheDocument();
+  });
+
+  it('debe mostrar el estado "Entregado" si la orden está en ese estado', () => {
+    const deliveredOrder = { ...mockOrder, estado: 'entregado' };
+    renderWithDnD(
+      <OrderCard 
+        order={deliveredOrder} 
+        index={0} 
+        onClick={() => {}} 
+      />
+    );
+    
+    expect(screen.getByText(/ENTREGADO/i)).toBeInTheDocument();
   });
 
   it('debe llamar a onClick cuando se hace clic', () => {

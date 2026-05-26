@@ -4,9 +4,10 @@
    const VALID_TRANSITIONS = {
      pendiente: ['en_preparacion'],
      en_preparacion: ['pendiente', 'preparado'],
-     preparado: ['en_preparacion', 'enviado'],
-     enviado: ['preparado', 'entregado'],
-     entregado: ['enviado']
+     preparado: ['en_preparacion', 'despachado'],
+     despachado: ['preparado', 'en_transito', 'entregado'],
+     en_transito: ['preparado', 'entregado'],
+     entregado: ['despachado', 'en_transito']
    };
 
    export const useOrderBoard = () => {
@@ -46,7 +47,13 @@
                  const index = prev.findIndex(o => o.id === data.order.id);
                  if (index !== -1) {
                    const newOrders = [...prev];
-                   newOrders[index] = data.order;
+                   // PRESERVAR flags locales de simulación que no vienen del back
+                   const existingOrder = prev[index];
+                   newOrders[index] = {
+                     ...data.order,
+                     simulationFinished: existingOrder.simulationFinished,
+                     isReenvio: existingOrder.isReenvio || data.order.estado === 'preparado' && existingOrder.estado === 'en_transito'
+                   };
                    return newOrders;
                  }
                  return [data.order, ...prev];

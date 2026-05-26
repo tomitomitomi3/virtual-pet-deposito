@@ -16,17 +16,17 @@ const COLUMNS = {
   pendiente: { id: 'pendiente', title: 'Pendiente', icon: Clock, color: 'bg-red-100 text-red-700 border-red-200' },
   en_preparacion: { id: 'en_preparacion', title: 'En Preparación', icon: Hammer, color: 'bg-amber-100 text-amber-700 border-amber-200'},
   preparado: { id: 'preparado', title: 'Preparado', icon: Package, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  enviado: { id: 'enviado', title: 'Enviado', icon: Truck, color: 'bg-green-100 text-green-700 border-green-200' },
+  despachado: { id: 'despachado', title: 'Despachado', icon: Truck, color: 'bg-green-100 text-green-700 border-green-200' },
 };
 
 const Board = () => {
   const { orders, loading, handleMove, setOrders } = useOrderBoard();
-  const { sentTimestamps, now } = useCourierSimulation(orders, setOrders); 
+  const { dispatchedTimestamps, now } = useCourierSimulation(orders, setOrders); 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const { logout, user } = useAuthStore();
 
-  const getHistoryOrders = () => orders.filter(o => o.estado === 'entregado' && !o.simulationFinished);
+  const getHistoryOrders = () => orders.filter(o => o.estado === 'entregado');
 
   const onDragEnd = (result) => {
     handleMove(result);
@@ -73,8 +73,8 @@ const Board = () => {
             <div className="flex gap-6 min-h-full min-w-max">
               {Object.values(COLUMNS).map((column) => {
                 const columnOrders = orders.filter(o => {
-                  if (column.id === 'enviado') {
-                    return o.estado === 'enviado' || (o.estado === 'entregado' && o.simulationFinished);
+                  if (column.id === 'despachado') {
+                    return o.estado === 'despachado' || o.estado === 'en_transito' || (o.estado === 'entregado' && o.simulationFinished);
                   }
                   return o.estado === column.id;
                 });
@@ -108,7 +108,7 @@ const Board = () => {
                                 index={index} 
                                 isSelected={selectedOrder?.id === order.id}
                                 onClick={setSelectedOrder}
-                                sentTimestamp={sentTimestamps[order.id]}
+                                dispatchedTimestamp={dispatchedTimestamps[order.id]}
                                 currentTime={now}
                               />
                             ))}

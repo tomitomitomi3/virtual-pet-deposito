@@ -2,11 +2,11 @@ import React, { memo } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { User, MapPin, Clock, Package, Truck, CheckCircle, AlertCircle } from 'lucide-react';
 
-   const OrderCard = memo(({ order, index, isSelected, onClick, sentTimestamp, currentTime }) => {
+   const OrderCard = memo(({ order, index, isSelected, onClick, dispatchedTimestamp, currentTime }) => {
 
      const getCourierStatus = () => {
-       // Si no es enviado ni entregado, no mostramos nada
-       if (order.estado !== 'enviado' && order.estado !== 'entregado') return null;
+       // Si no es despachado, en tránsito ni entregado, no mostramos nada
+       if (order.estado !== 'despachado' && order.estado !== 'en_transito' && order.estado !== 'entregado') return null;
        
        // Si ya está entregado (y terminó la simulación), mostramos 'Entregado'
        if (order.estado === 'entregado') {
@@ -17,26 +17,24 @@ import { User, MapPin, Clock, Package, Truck, CheckCircle, AlertCircle } from 'l
          };
        }
 
-       if (!sentTimestamp) return null;
-       
-       // Usamos la prop inyectada, que es reactiva
-       const elapsed = currentTime - sentTimestamp;
-       
-       if (elapsed < 10000) return { 
-         label: 'En manos del transportista', 
-         color: 'bg-amber-50 text-amber-700 border-amber-100', 
-         icon: <Package size={12}/> 
-       };
-       if (elapsed < 20000) return { 
-         label: 'En tránsito', 
-         color: 'bg-blue-50 text-blue-700 border-blue-100', 
-         icon: <Truck size={12}/> 
-       };
-       return { 
-         label: 'Entregado', 
-         color: 'bg-green-50 text-green-700 border-green-100', 
-         icon: <CheckCircle size={12}/> 
-       };
+       // Mapeo de estados reales a etiquetas legibles
+       if (order.estado === 'despachado') {
+         return { 
+           label: 'En manos del transportista', 
+           color: 'bg-amber-50 text-amber-700 border-amber-100', 
+           icon: <Package size={12}/> 
+         };
+       }
+
+       if (order.estado === 'en_transito') {
+         return { 
+           label: 'En tránsito', 
+           color: 'bg-blue-50 text-blue-700 border-blue-100', 
+           icon: <Truck size={12}/> 
+         };
+       }
+
+       return null;
      };
 
      const courierStatus = getCourierStatus();

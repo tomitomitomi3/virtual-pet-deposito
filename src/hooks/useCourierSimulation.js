@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 
 const SIMULATION_CONFIG = {
@@ -9,53 +9,91 @@ const SIMULATION_CONFIG = {
 };
 
 export const useCourierSimulation = (orders, setOrders) => {
-  // Guardamos cuándo entró cada pedido a la columna "enviado"
-  const [sentTimestamps, setSentTimestamps] = useState({});
+  // Guardamos cuándo entró cada pedido a la columna "despachado"
+  const [dispatchedTimestamps, setDispatchedTimestamps] = useState({});
   const [now, setNow] = useState(Date.now());
+  
+  // Referencias para evitar reinicios de efectos y condiciones de carrera
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
+  const processingIds = useRef(new Set());
 
   useEffect(() => {
-    // Escaneamos las órdenes para detectar cuáles están en 'enviado' 
+    // Escaneamos las órdenes para detectar cuáles están en 'despachado' 
     // pero aún no tienen un timestamp (acaban de llegar)
-    const now = Date.now();
-    const newTimestamps = { ...sentTimestamps };
+    const nowTimestamp = Date.now();
+    const newTimestamps = { ...dispatchedTimestamps };
     let hasChanges = false;
 
     orders.forEach(order => {
-      if (order.estado === 'enviado' && !newTimestamps[order.id]) {
-        newTimestamps[order.id] = now;
+      if (order.estado === 'despachado' && !newTimestamps[order.id]) {
+        newTimestamps[order.id] = nowTimestamp;
         hasChanges = true;
       }
-      // Si el pedido salió de 'enviado', limpiamos su timestamp
-      if (order.estado !== 'enviado' && newTimestamps[order.id]) {
+      // Si el pedido salió de los estados de tránsito/despachado, limpiamos su timestamp
+      // Mantenemos el timestamp si está en 'despachado' o 'en_transito'
+      const isInSimulation = order.estado === 'despachado' || order.estado === 'en_transito';
+      if (!isInSimulation && newTimestamps[order.id]) {
         delete newTimestamps[order.id];
         hasChanges = true;
       }
     });
 
-    if (hasChanges) setSentTimestamps(newTimestamps);
+    if (hasChanges) setDispatchedTimestamps(newTimestamps);
   }, [orders]);
 
   // Bucle de simulación
   useEffect(() => {
-    const timer = setInterval(async () => {
+    const timer = setInterval(() => {
       const currentTime = Date.now();
-      setNow(currentTime); // <--- Esto dispara el re-renderizado cada segundo
+      setNow(currentTime);
       
-      for (const [orderId, timestamp] of Object.entries(sentTimestamps)) {
-        const elapsed = currentTime - timestamp;
+      // Usamos forEach para que las promesas no bloqueen el bucle
+      Object.entries(dispatchedTimestamps).forEach(async ([orderId, timestamp]) => {
         const id = parseInt(orderId);
-        const order = orders.find(o => o.id === id);
+        
+        // Si ya estamos procesando un cambio para esta orden, saltar
+        if (processingIds.current.has(id)) return;
 
-        if (!order || order.simulationFinished) continue;
+        const order = ordersRef.current.find(o => o.id === id);
+        if (!order || order.simulationFinished) return;
+
+        const elapsed = currentTime - timestamp;
+
+        // --- PASO A TRÁNSITO (A los 10 segundos) ---
+        if (elapsed >= SIMULATION_CONFIG.TRANSIT_TIME && order.estado === 'despachado') {
+          processingIds.current.add(id);
+          console.log(`[Simulation] Pedido #${id} intentando pasar a en_transito...`);
+          try {
+            await api.patch(`/backoffice/orders/${id}/estado`, { estado: 'en_transito' });
+            console.log(`[Simulation] Pedido #${id} pasó a en_transito en el backend`);
+            setOrders(prev => prev.map(o => o.id === id ? { ...o, estado: 'en_transito' } : o));
+          } catch (e) {
+            const errorMsg = e.response?.data?.detail || e.response?.data?.error || e.message;
+            console.error(`[Simulation] Error en pedido #${id}:`, errorMsg);
+            
+            // Si hay error (especialmente 409), dejamos de simular este paso para este pedido
+            setDispatchedTimestamps(prev => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
+          } finally {
+            processingIds.current.delete(id);
+          }
+        }
 
         // --- DESENLACE FINAL (A los 20 segundos) ---
-        if (elapsed >= SIMULATION_CONFIG.DELIVERY_TIME) {
+        if (elapsed >= SIMULATION_CONFIG.DELIVERY_TIME && order.estado === 'en_transito') {
+          processingIds.current.add(id);
           const isFailure = Math.random() < SIMULATION_CONFIG.FAILURE_RATE;
           const nextState = isFailure ? 'preparado' : 'entregado';
+          console.log(`[Simulation] Pedido #${id} intentando pasar a ${nextState} (falla: ${isFailure})...`);
 
           try {
             // Persistir en el Back
             await api.patch(`/backoffice/orders/${id}/estado`, { estado: nextState });
+            console.log(`[Simulation] Pedido #${id} persistido como ${nextState}`);
             
             // Actualizar UI localmente
             setOrders(prev => prev.map(o => o.id === id?{ 
@@ -65,20 +103,31 @@ export const useCourierSimulation = (orders, setOrders) => {
                   simulationFinished: true 
                } : o));
        
-              // 3. Limpiamos el timer
-              setSentTimestamps(prev => {
+              // 3. Limpiamos el timestamp para sacarlo de la simulación
+              setDispatchedTimestamps(prev => {
                 const next = { ...prev };
                 delete next[id];
                 return next;
               });
           } catch (e) {
-          console.error(`Error persistiendo pedido #${id}:`, e); }
+            const errorMsg = e.response?.data?.detail || e.response?.data?.error || e.message;
+            console.error(`[Simulation] Error persistiendo pedido #${id}:`, errorMsg);
+            
+            // Si falla el desenlace, también lo sacamos para no loopear
+            setDispatchedTimestamps(prev => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
+          } finally {
+            processingIds.current.delete(id);
+          }
         }
-      }
+      });
     }, SIMULATION_CONFIG.CHECK_INTERVAL);
 
     return () => clearInterval(timer);
-  }, [sentTimestamps, orders, setOrders]);
+  }, [dispatchedTimestamps, setOrders]); // Quitamos 'orders' de las dependencias para evitar reinicios constantes
 
-  return { sentTimestamps, now };
+  return { dispatchedTimestamps, now };
 };
