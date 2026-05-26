@@ -26,7 +26,7 @@ const Board = () => {
   const [showHistory, setShowHistory] = useState(false);
   const { logout, user } = useAuthStore();
 
-  const getHistoryOrders = () => orders.filter(o => o.estado === 'entregado');
+  const getHistoryOrders = () => orders.filter(o => o.estado === 'entregado' && !o.simulationFinished);
 
   const onDragEnd = (result) => {
     handleMove(result);

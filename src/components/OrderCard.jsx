@@ -1,11 +1,23 @@
 import React, { memo } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import { User, MapPin, Clock, Package, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, MapPin, Clock, Package, Truck, CheckCircle, AlertCircle } from 'lucide-react';
 
    const OrderCard = memo(({ order, index, isSelected, onClick, sentTimestamp, currentTime }) => {
 
      const getCourierStatus = () => {
-       if (order.estado !== 'enviado' || !sentTimestamp) return null;
+       // Si no es enviado ni entregado, no mostramos nada
+       if (order.estado !== 'enviado' && order.estado !== 'entregado') return null;
+       
+       // Si ya está entregado (y terminó la simulación), mostramos 'Entregado'
+       if (order.estado === 'entregado') {
+         return { 
+           label: 'Entregado', 
+           color: 'bg-green-50 text-green-700 border-green-100', 
+           icon: <CheckCircle size={12}/> 
+         };
+       }
+
+       if (!sentTimestamp) return null;
        
        // Usamos la prop inyectada, que es reactiva
        const elapsed = currentTime - sentTimestamp;
@@ -23,7 +35,7 @@ import { User, MapPin, Clock, Package, Truck, CheckCircle2, AlertCircle } from '
        return { 
          label: 'Entregado', 
          color: 'bg-green-50 text-green-700 border-green-100', 
-         icon: <CheckCircle2 size={12}/> 
+         icon: <CheckCircle size={12}/> 
        };
      };
 

@@ -40,7 +40,7 @@
          socket.onmessage = (event) => {
            try {
              const data = JSON.parse(event.data);
-             if (data.type === 'order_updated') {
+             if (data.type === 'order_created' || data.type === 'order_updated') {
                console.log('WS Update received:', data.order);
                setOrders(prev => {
                  const index = prev.findIndex(o => o.id === data.order.id);
