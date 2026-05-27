@@ -43,6 +43,12 @@
              const data = JSON.parse(event.data);
              if (data.type === 'order_created' || data.type === 'order_updated') {
                console.log('WS Update received:', data.order);
+
+               if (data.type === 'order_created') {
+                 const audio = new Audio('https://bigsoundbank.com/static/sounds/0926.mp3');
+                 audio.play().catch(err => console.warn('Could not play notification sound (user interaction may be required):', err));
+               }
+
                setOrders(prev => {
                  const index = prev.findIndex(o => o.id === data.order.id);
                  if (index !== -1) {

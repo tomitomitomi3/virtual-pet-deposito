@@ -22,6 +22,15 @@ class MockWebSocket {
 }
 global.WebSocket = MockWebSocket;
 
+// Mock de Audio
+const mockPlay = vi.fn().mockResolvedValue(undefined);
+global.Audio = class {
+  constructor(src) {
+    this.src = src;
+  }
+  play = mockPlay;
+};
+
 const mockOrders = [
   { id: 1, estado: 'pendiente', user: { nombre: 'A', apellido: 'B' }, total: 100, created_at: new Date().toISOString() },
   { id: 2, estado: 'en_preparacion', user: { nombre: 'C', apellido: 'D' }, total: 200, created_at: new Date().toISOString() },
@@ -126,5 +135,32 @@ describe('useOrderBoard', () => {
 
     expect(api.patch).toHaveBeenCalledWith('/backoffice/orders/3/estado', { estado: 'en_transito' });
     expect(result2.current.orders.find(o => o.id === 3).estado).toBe('en_transito');
+  });
+
+  it('debe reproducir el sonido de notificación cuando se crea un pedido', async () => {
+    api.get.mockResolvedValue({ data: [] });
+    
+    let wsInstance;
+    global.WebSocket = class extends MockWebSocket {
+      constructor(url) {
+        super(url);
+        wsInstance = this;
+      }
+    };
+
+    renderHook(() => useOrderBoard());
+
+    // Esperar a que se conecte el WS
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    });
+
+    // Simular mensaje de pedido creado
+    const newOrder = { id: 99, estado: 'pendiente', total: 500, created_at: new Date().toISOString() };
+    await act(async () => {
+      wsInstance.onmessage({ data: JSON.stringify({ type: 'order_created', order: newOrder }) });
+    });
+
+    expect(mockPlay).toHaveBeenCalled();
   });
 });
