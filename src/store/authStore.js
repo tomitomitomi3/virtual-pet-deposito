@@ -24,8 +24,18 @@ const useAuthStore = create((set) => ({
       set({ token: access_token, user, loading: false })
       return true
     } catch (err) {
+      let errorMessage = 'Error al conectar con el servidor'
+      
+      if (err.response?.status === 401) {
+        errorMessage = 'Email o contraseña incorrectos'
+      } else if (err.response?.data?.detail) {
+        errorMessage = err.response.data.detail
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+
       set({ 
-        error: err.message || err.response?.data?.detail || 'Error al iniciar sesión', 
+        error: errorMessage, 
         loading: false 
       })
       return false

@@ -18,7 +18,9 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401) {
+    // Si es 401 y no es la ruta de login, limpiar y redirigir
+    // Esto evita recargas infinitas si las credenciales son incorrectas
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('vp_token')
       window.location.href = '/login'
     }

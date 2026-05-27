@@ -51,6 +51,15 @@ describe('authStore', () => {
     expect(useAuthStore.getState().error).toBe('Credenciales inválidas');
   });
 
+  it('debe mostrar mensaje específico para error 401', async () => {
+    api.post.mockRejectedValue({ response: { status: 401 } });
+
+    const success = await useAuthStore.getState().login('wrong@test.com', 'wrong');
+
+    expect(success).toBe(false);
+    expect(useAuthStore.getState().error).toBe('Email o contraseña incorrectos');
+  });
+
   it('debe cerrar sesión correctamente', () => {
     useAuthStore.setState({ token: 'token', user: { role: 'admin' } });
     localStorage.setItem('vp_token', 'token');
