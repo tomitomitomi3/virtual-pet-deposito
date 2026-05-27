@@ -39,8 +39,8 @@ const Board = () => {
   );
 
   return (
-    <div className="min-h-screen bg-surface-50 font-body flex flex-col overflow-hidden">
-      <header className="bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+    <div className="h-screen bg-surface-50 font-body flex flex-col overflow-hidden">
+      <header className="bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between shrink-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="bg-brand-500 p-2 rounded-xl"><Dog className="text-white w-5 h-5" /></div>
           <div>
@@ -69,8 +69,8 @@ const Board = () => {
 
       <div className="flex-1 flex overflow-hidden">
         <DragDropContext onDragEnd={onDragEnd}>
-          <main className={`flex-1 p-6 overflow-x-auto transition-all duration-300 ${selectedOrder ? 'mr-[400px]' : ''}`}>
-            <div className="flex gap-6 min-h-full min-w-max">
+          <main className={`flex-1 p-6 overflow-hidden transition-all duration-300 ${selectedOrder ? 'mr-[400px]' : ''}`}>
+            <div className="flex gap-6 h-full">
               {Object.values(COLUMNS).map((column) => {
                 const columnOrders = orders.filter(o => {
                   if (column.id === 'despachado') {
@@ -80,8 +80,8 @@ const Board = () => {
                 });
 
                 return (
-                  <div key={column.id} className="w-80 flex flex-col">
-                    <div className={`mb-4 p-3 rounded-2xl border ${column.color} flex items-center justify-between`}>
+                  <div key={column.id} className="w-80 flex flex-col h-full">
+                    <div className={`mb-4 p-3 rounded-2xl border ${column.color} flex items-center justify-between shrink-0`}>
                       <div className="flex items-center gap-2">
                         <column.icon className="w-4 h-4" />
                         <span className="font-bold text-sm uppercase tracking-wide">{column.title}</span>
@@ -91,32 +91,34 @@ const Board = () => {
                       </span>
                     </div>
 
-                    <Droppable droppableId={column.id}>
-                      {(provided, snapshot) => (
-                        <div
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
-                          className={`flex-1 rounded-3xl transition-colors p-2 ${
-                            snapshot.isDraggingOver ? 'bg-brand-50/50 border-2 border-dashed border-brand-200' : 'bg-surface-100/50'
-                          }`}
-                        >
-                          <div className="space-y-3">
-                            {columnOrders.map((order, index) => (
-                              <OrderCard 
-                                key={order.id} 
-                                order={order} 
-                                index={index} 
-                                isSelected={selectedOrder?.id === order.id}
-                                onClick={setSelectedOrder}
-                                dispatchedTimestamp={dispatchedTimestamps[order.id]}
-                                currentTime={now}
-                              />
-                            ))}
-                            {provided.placeholder}
+                    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+                      <Droppable droppableId={column.id}>
+                        {(provided, snapshot) => (
+                          <div
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className={`min-h-full rounded-3xl transition-colors p-2 ${
+                              snapshot.isDraggingOver ? 'bg-brand-50/50 border-2 border-dashed border-brand-200' : 'bg-surface-100/50'
+                            }`}
+                          >
+                            <div className="space-y-3">
+                              {columnOrders.map((order, index) => (
+                                <OrderCard 
+                                  key={order.id} 
+                                  order={order} 
+                                  index={index} 
+                                  isSelected={selectedOrder?.id === order.id}
+                                  onClick={setSelectedOrder}
+                                  dispatchedTimestamp={dispatchedTimestamps[order.id]}
+                                  currentTime={now}
+                                />
+                              ))}
+                              {provided.placeholder}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </Droppable>
+                        )}
+                      </Droppable>
+                    </div>
                   </div>
                 );
               })}

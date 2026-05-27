@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  html, body, #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
     @apply bg-surface-50 text-gray-800 font-body antialiased;
   }
