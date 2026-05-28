@@ -19,27 +19,30 @@ export const useCourierSimulation = (orders, setOrders) => {
   const processingIds = useRef(new Set());
 
   useEffect(() => {
-    // Escaneamos las órdenes para detectar cuáles están en 'despachado' 
-    // pero aún no tienen un timestamp (acaban de llegar)
     const nowTimestamp = Date.now();
-    const newTimestamps = { ...dispatchedTimestamps };
-    let hasChanges = false;
+    
+    setDispatchedTimestamps(prev => {
+      const newTimestamps = { ...prev };
+      let hasChanges = false;
 
-    orders.forEach(order => {
-      if (order.estado === 'despachado' && !newTimestamps[order.id]) {
-        newTimestamps[order.id] = nowTimestamp;
-        hasChanges = true;
-      }
-      // Si el pedido salió de los estados de tránsito/despachado, limpiamos su timestamp
-      // Mantenemos el timestamp si está en 'despachado' o 'en_transito'
-      const isInSimulation = order.estado === 'despachado' || order.estado === 'en_transito';
-      if (!isInSimulation && newTimestamps[order.id]) {
-        delete newTimestamps[order.id];
-        hasChanges = true;
-      }
+      orders.forEach(order => {
+        // Escaneamos las órdenes para detectar cuáles están en 'despachado' 
+        // pero aún no tienen un timestamp (acaban de llegar)
+        if (order.estado === 'despachado' && !newTimestamps[order.id]) {
+          newTimestamps[order.id] = nowTimestamp;
+          hasChanges = true;
+        }
+        // Si el pedido salió de los estados de tránsito/despachado, limpiamos su timestamp
+        // Mantenemos el timestamp si está en 'despachado' o 'en_transito'
+        const isInSimulation = order.estado === 'despachado' || order.estado === 'en_transito';
+        if (!isInSimulation && newTimestamps[order.id]) {
+          delete newTimestamps[order.id];
+          hasChanges = true;
+        }
+      });
+
+      return hasChanges ? newTimestamps : prev;
     });
-
-    if (hasChanges) setDispatchedTimestamps(newTimestamps);
   }, [orders]);
 
   // Bucle de simulación
