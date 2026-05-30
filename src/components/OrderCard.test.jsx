@@ -46,31 +46,15 @@ describe('OrderCard', () => {
 
   it('debe mostrar el estado del transportista si está despachado', () => {
     const sentOrder = { ...mockOrder, estado: 'despachado' };
-    const sentTimestamp = Date.now() - 5000; // 5 segundos atrás
     renderWithDnD(
       <OrderCard 
         order={sentOrder} 
         index={0} 
         onClick={() => {}} 
-        sentTimestamp={sentTimestamp} 
-        currentTime={Date.now()}
       />
     );
     
     expect(screen.getByText(/EN MANOS DEL TRANSPORTISTA/i)).toBeInTheDocument();
-  });
-
-  it('debe mostrar el estado "En tránsito" si la orden está en ese estado', () => {
-    const transitOrder = { ...mockOrder, estado: 'en_transito' };
-    renderWithDnD(
-      <OrderCard 
-        order={transitOrder} 
-        index={0} 
-        onClick={() => {}} 
-      />
-    );
-    
-    expect(screen.getByText(/EN TRÁNSITO/i)).toBeInTheDocument();
   });
 
   it('debe mostrar el estado "Entregado" si la orden está en ese estado', () => {

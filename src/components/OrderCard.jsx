@@ -2,13 +2,10 @@ import React, { memo } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { User, MapPin, Clock, Package, Truck, CheckCircle, AlertCircle } from 'lucide-react';
 
-   const OrderCard = memo(({ order, index, isSelected, onClick, dispatchedTimestamp, currentTime }) => {
+   const OrderCard = memo(({ order, index, isSelected, onClick }) => {
 
      const getCourierStatus = () => {
-       // Si no es despachado, en tránsito ni entregado, no mostramos nada
-       if (order.estado !== 'despachado' && order.estado !== 'en_transito' && order.estado !== 'entregado') return null;
-       
-       // Si ya está entregado (y terminó la simulación), mostramos 'Entregado'
+       // Si ya está entregado, mostramos 'Entregado'
        if (order.estado === 'entregado') {
          return { 
            label: 'Entregado', 
@@ -26,14 +23,6 @@ import { User, MapPin, Clock, Package, Truck, CheckCircle, AlertCircle } from 'l
          };
        }
 
-       if (order.estado === 'en_transito') {
-         return { 
-           label: 'En tránsito', 
-           color: 'bg-blue-50 text-blue-700 border-blue-100', 
-           icon: <Truck size={12}/> 
-         };
-       }
-
        return null;
      };
 
@@ -47,7 +36,6 @@ import { User, MapPin, Clock, Package, Truck, CheckCircle, AlertCircle } from 'l
              {...provided.draggableProps}
              {...provided.dragHandleProps}
              onClick={() => onClick(order)}
-             // Eliminamos transition-all y estilos manuales para evitar el bug del placeholder
              className={`bg-white p-4 rounded-2xl shadow-sm border cursor-pointer mb-3 select-none outline-none ${
                isSelected ? 'border-brand-500 ring-2 ring-brand-500/10' : 'border-surface-200 hover:border-brand-300'
              } ${snapshot.isDragging ? 'shadow-2xl z-50 ring-2 ring-brand-500/20' : ''}`}
@@ -59,7 +47,7 @@ import { User, MapPin, Clock, Package, Truck, CheckCircle, AlertCircle } from 'l
                  <AlertCircle size={12} /> REENVÍO POR FALLA
                </div>
              )}
-             {/* Badge Simulación */}
+             {/* Badge Courier */}
              {courierStatus && (
                <div className={`mb-2 flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-lg border ${courierStatus.color}`}>
                  {courierStatus.icon} {courierStatus.label.toUpperCase()}

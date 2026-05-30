@@ -114,28 +114,28 @@ describe('useOrderBoard', () => {
     expect(api.patch).toHaveBeenCalledWith('/backoffice/orders/1/estado', { estado: 'en_preparacion' });
     expect(result.current.orders.find(o => o.id === 1).estado).toBe('en_preparacion');
 
-    // Intentar mover de 'despachado' a 'en_transito' (válido)
+    // Intentar mover de 'despachado' a 'preparado' (válido ahora por fallo entrega)
     const ordersWithSent = [
         { id: 3, estado: 'despachado', user: { nombre: 'E', apellido: 'F' }, total: 300, created_at: new Date().toISOString() }
     ];
     api.get.mockResolvedValue({ data: ordersWithSent });
-    
+
     const { result: result2 } = renderHook(() => useOrderBoard());
     await act(async () => { await new Promise(r => setTimeout(r, 0)); });
 
-    const transitResult = {
-      destination: { droppableId: 'en_transito', index: 0 },
+    const fallbackResult = {
+      destination: { droppableId: 'preparado', index: 0 },
       source: { droppableId: 'despachado', index: 0 },
       draggableId: '3'
     };
 
     await act(async () => {
-      await result2.current.handleMove(transitResult);
+      await result2.current.handleMove(fallbackResult);
     });
 
-    expect(api.patch).toHaveBeenCalledWith('/backoffice/orders/3/estado', { estado: 'en_transito' });
-    expect(result2.current.orders.find(o => o.id === 3).estado).toBe('en_transito');
-  });
+    expect(api.patch).toHaveBeenCalledWith('/backoffice/orders/3/estado', { estado: 'preparado' });
+    expect(result2.current.orders.find(o => o.id === 3).estado).toBe('preparado');
+    });
 
   it('debe reproducir el sonido de notificación cuando se crea un pedido', async () => {
     api.get.mockResolvedValue({ data: [] });
